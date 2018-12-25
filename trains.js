@@ -18,13 +18,10 @@ $("#add-train").on("click", function (event) {
     // Don't refresh the page!
     event.preventDefault();
 
-    var trainName = $("#trainName-input").val().trim()
-    var destination = $("#destination-input").val().trim()
-    var firstTrainTime = $("#firstTrainTime-input").val().trim()
-    var frequency = $("#frequency-input").val().trim()
-
-    // var userDataUnix = userDate.format();
-    // console.log(userDataUnix);
+    var trainName = $("#trainName-input").val().trim();
+    var destination = $("#destination-input").val().trim();
+    var firstTrainTime = $("#firstTrainTime-input").val().trim();
+    var frequency = $("#frequency-input").val().trim();
 
     // Code for handling the push
     database.ref().push({
@@ -35,43 +32,61 @@ $("#add-train").on("click", function (event) {
         // dateAdded: firebase.database.ServerValue.TIMESTAMP
     });
 
+
 });
 
 database.ref().on("child_added", function (snapshot) {
     // storing the snapshot.val() in a variable for convenience
     var sv = snapshot.val();
 
-
-    //.text replaces the text on a  page
     // Console.logging the last user's data
     console.log(sv.tname);
     console.log(sv.tdestination);
     console.log(sv.tfirstTrainTime);
     console.log(sv.tfrequency);
-    // console.log(sv.dateAdded);
 
 ////////////////////////////////////////////////
 //////START HERE WITH MOMENT FOR FUNCTIONS/////
 
-    // var subtracted = moment().subtract(sv.date).format("month");
-    var subtracted = moment().diff(sv.date, 'months');
+    //FREQUENCY = sv.tfrequency
+    //start train tme = sv.tfirstTrainTime;
+    // First Time (pushed back 1 year to make sure it comes before current time); 
 
-    console.log("Moment =" + moment().format('MM/DD/YYYY'));
-    console.log("UserMonth =" + subtracted);
+    //display first train time in military time
+    var tfirstTrainTimeConverted = moment(sv.tfirstTrainTime, "HH:mm").subtract(1, "years");
+    console.log(tfirstTrainTimeConverted);
 
-    var total = subtracted * sv.rate;
+    //get current time in military time
+    var currentTime = moment();
+    console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+
+    // Difference between the times
+    var diffTime = moment().diff(moment(tfirstTrainTimeConverted), "minutes");
+    console.log("DIFFERENCE IN TIME: " + diffTime);
+
+    // Time apart (remainder) 
+    //this is MODULUS (%) the remainder
+    var tRemainder = diffTime % sv.tfrequency;
+    console.log(diffTime % sv.tfrequency);
+
+    // Minute Until Train
+    var tMinutesTillTrain = sv.tfrequency - tRemainder;
+    console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
+
+    // Next Train
+    var nextTrain = moment().add(tMinutesTillTrain, "minutes");
+    var nextArrive = moment(nextTrain).format("hh:mm A");
+    console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm A"));
+
 
     // Change the HTML to reflect
-    $("tbody").append("<tr>  <td > " + sv.name + " </td>" +
-        "<td> " + sv.role + " </td>" +
-        "<td> " + sv.date + " </td>" +
-        "<td> " + subtracted + " </td>" +
-        "<td>  $" + sv.rate + " </td>" +
-        "<td>  $" + total + " </td> </tr>"
+    $("tbody").append("<tr>  <td > " + sv.tname + " </td>" +
+        "<td> " + sv.tdestination + " </td>" +
+        "<td> " + sv.tfrequency + " </td>" +
+        "<td> " + nextArrive + " </td>" +
+        "<td> " + tMinutesTillTrain + " </td></tr>" 
     );
-
-
-
+  
     // Handle the errors
 }, function (errorObject) {
     console.log("Errors handled: " + errorObject.code);
